@@ -2,8 +2,10 @@ name: Scheduled Headless Browser Visit
 
 on:
   schedule:
-    - cron: '0 */11 * * *'  # 每 3 小时的整点运行一次（UTC）
-  workflow_dispatch:      # 👈 添加这个以支持手动触发
+    - cron: '0 0 * * *'    # 每天 00:00 UTC
+    - cron: '0 8 * * *'    # 每天 08:00 UTC
+    - cron: '0 16 * * *'   # 每天 16:00 UTC
+  workflow_dispatch:       # 支持手动触发
 
 jobs:
   visit-and-click:
@@ -14,20 +16,35 @@ jobs:
       USER_AGENT: ${{ secrets.USER_AGENT }}
       IMGE_API_KEY: ${{ secrets.IMGE_API_KEY }}
       IMGE_ALBUM_ID: ${{ secrets.IMGE_ALBUM_ID }}
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      - name: Restore Cookie Cache
+        uses: actions/cache@v4
+        with:
+          path: cookies.json
+          key: cookie-${{ github.run_id }}
+          restore-keys: |
+            cookie-
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-        
           node-version: '18'
 
-      - name: Install dependencies      
+      - name: Install dependencies
         run: npm ci
+
       - name: Run Puppeteer script
         run: node visit.js
+
+      - name: Save Cookie Cache
+        uses: actions/cache@v4
+        with:
+          path: cookies.json
+          key: cookie-${{ github.run_id }}
       # - name: Upload package-lock.json
       #   uses: actions/upload-artifact@v4
       #   with:
